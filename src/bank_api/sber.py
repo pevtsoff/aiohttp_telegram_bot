@@ -1,5 +1,5 @@
-from src.bank_api.common import logger, credit_params, query_url, gather_tasks
 import asyncio
+from src.bank_api.common import logger, credit_params, query_url, gather_tasks
 
 headers = {'Api-Key': '728a2644-fefc-43c1-9054-5806c8fda7ef'}
 market_index = {"первичный рынок": 4, "вторичный рынок": 3}
