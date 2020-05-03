@@ -1,7 +1,9 @@
+import asyncio
+import requests
 from src.bank_api import sber, vtb, sravni_ru
 from src.bank_api.common import logger, calculate_average_rate, gather_tasks, query_url
 from src.config import bot_id
-import asyncio
+
 
 url = f'https://api.telegram.org/bot{bot_id}/sendMessage'
 msg_template = {"chat_id": "@mortgage_pulse_rus", "parse_mode": "html"}
@@ -80,7 +82,7 @@ async def send_messages_for(market: str):
         logger.info(f'sum message response={res}')
 
     except Exception as e:
-        logger.error(e, exc_info=True)
+        logger.exception(e)
 
 
 

@@ -1,7 +1,8 @@
 import pytest
 import logging
 from src.bank_api.common import logger, calculate_average_rate, calculate_weighted_average_rate
-from src.telegram_api import get_rates, make_message, make_header_message, make_summary_message
+from src.telegram_api import get_rates, make_message, make_header_message, make_summary_message, main
+from unittest.mock import patch
 
 
 @pytest.mark.asyncio
@@ -15,23 +16,16 @@ async def test_rates_api():
 
 
 @pytest.mark.asyncio
-async def test_telegram_messages_manual(caplog):
+async def test_main(caplog):
     with caplog.at_level(logging.INFO, logger='src.bank_api.common'):
-        await _messages_for('первичный рынок')
-        await _messages_for('вторичный рынок')
+        with patch('src.telegram_api.query_url', side_effect=_mock_query_url):
+            await main()
+            _assert_output(caplog)
 
 
-async def _messages_for(market: str):
-    rates = await get_rates(market)
-    rate_message = make_message(rates)['text'].decode('utf-8')
-    market_desc = market
-    avg_rate = calculate_average_rate(rates)
-    weighted_avg = calculate_weighted_average_rate(rates)
-    logger.info(f'{weighted_avg=}')
-    logger.info(make_header_message(market_desc)['text'].decode('utf-8'))
-    logger.info(rate_message)
-    logger.info(make_summary_message(avg_rate, market_desc)['text'].decode('utf-8'))
-    assert_rates(rates)
+async def _mock_query_url(url, headers=None, method='get', data=None):
+    text = data.get('text').decode('utf-8')
+    logger.info(f'{url=}, {headers=}, {method=}, {text=}')
 
 
 def assert_rates(rates):
@@ -41,3 +35,13 @@ def assert_rates(rates):
     for rate in rates:
         assert rate['rate']['to'] > 0
         assert rate['rate']['from'] > 0
+
+
+def _assert_output(caplog):
+    logs = caplog.records
+    assert '<b>Первичный рынок</b>' in logs[1].message
+    assert '<b>Сбербанк</b> (domclick.ru):' in logs[3].message
+    assert '<b>Среднерыночная Ставка:' in logs[5].message
+    assert '<b>Вторичный рынок</b>' in logs[8].message
+    assert '<b>Сбербанк</b> (domclick.ru):' in logs[10].message
+    assert '<b>Среднерыночная Ставка:' in logs[12].message

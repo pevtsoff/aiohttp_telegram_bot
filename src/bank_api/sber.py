@@ -1,6 +1,7 @@
 import asyncio
 from src.bank_api.common import logger, credit_params, query_url, gather_tasks
 
+
 headers = {'Api-Key': '728a2644-fefc-43c1-9054-5806c8fda7ef'}
 market_index = {"первичный рынок": 4, "вторичный рынок": 3}
 min_rate_url = 'https://api.domclick.ru/calc/api/v2/mortgages/calculate?isIncomeSberbankCard=yes&isConfirmIncome=true&productId={mortgage_goal}&estateCost={full_price}&deposit={prepaid}&term=120&age=420&isInsured=true&isMarried=true&isHusbandWifeLess35Years=true&childrens=0&useOnRegDiscount=yes&useDeveloperDiscount=true&useRealtyDiscount=true&kladrId=7700000000000'
@@ -12,7 +13,6 @@ async def get_mortgage_data(mortgage_goal: str) -> dict:
         min_rate_url_f, max_rate_url_f = _prepare_url(mortgage_goal)
         min_rate_c = query_url(min_rate_url_f, headers, 'get')
         max_rate_c = query_url(max_rate_url_f, headers, 'get')
-        # TODO: remove await in here to gather them later
         rates = await gather_tasks({
             'min_rate_data': min_rate_c,
             'max_rate_data': max_rate_c
