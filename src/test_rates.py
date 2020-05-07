@@ -23,9 +23,9 @@ async def test_main(caplog):
             _assert_output(caplog)
 
 
-async def _mock_query_url(url, headers=None, method='get', data=None):
+async def _mock_query_url(url, headers=None, method='get', data=None, output='json'):
     text = data.get('text').decode('utf-8')
-    logger.info(f'{url=}, {headers=}, {method=}, {text=}')
+    logger.info(f'{url=}, {headers=}, {method=}, {text=}, {output=}')
 
 
 def assert_rates(rates):

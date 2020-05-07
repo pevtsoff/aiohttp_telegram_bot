@@ -1,5 +1,4 @@
 import asyncio
-import requests
 from src.bank_api import sber, vtb, sravni_ru
 from src.bank_api.common import logger, calculate_average_rate, gather_tasks, query_url
 from src.config import bot_id
@@ -7,6 +6,8 @@ from src.config import bot_id
 
 url = f'https://api.telegram.org/bot{bot_id}/sendMessage'
 msg_template = {"chat_id": "@mortgage_pulse_rus", "parse_mode": "html"}
+initial_market = 'первичный рынок'
+secondary_market = 'вторичный рынок'
 
 
 def make_message(rates: list) -> dict:
@@ -58,25 +59,22 @@ async def get_rates(market):
     return rates
 
 
-async def send_messages_for(market: str):
+async def send_messages_for(market: str, rates: dict):
     try:
         logger.info(f'Sending messages for {market}')
-        rates = await get_rates(market)
-
         data = make_message(rates)
-        market_desc = market
         avg_rate = calculate_average_rate(rates)
 
         res = await query_url(
-            url=url, data=make_header_message(market_desc), method='post'
+            url=url, data=make_header_message(market),
+            method='post', output='text'
         )
         logger.info(f'header message response={res}')
-        res = await query_url(url=url, data=data, method='post')
+        res = await query_url(url=url, data=data, method='post', output='text')
         logger.info(f'main message response={res}')
         res = await query_url(
-            url=url,
-            data=make_summary_message(avg_rate, market_desc),
-            method='post'
+            url=url, data=make_summary_message(avg_rate, market),
+            method='post', output='text'
         )
 
         logger.info(f'sum message response={res}')
@@ -96,8 +94,12 @@ def _extract_rates(rate_tasks: dict) -> list:
 
 
 async def main():
-    await send_messages_for('первичный рынок')
-    await send_messages_for('вторичный рынок')
+    rates = await gather_tasks({
+        initial_market: get_rates(initial_market),
+        secondary_market:  get_rates(secondary_market)
+    })
+    await send_messages_for(initial_market, rates[initial_market])
+    await send_messages_for(secondary_market, rates[secondary_market])
 
 
 if __name__ == '__main__':

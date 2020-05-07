@@ -46,12 +46,12 @@ def conf_logger(level):
 logger = conf_logger(logging.DEBUG)
 
 
-async def query_url(url, headers=None, method='get', data=None):
+async def query_url(url, headers=None, method='get', data=None, output='json'):
     async with aiohttp.ClientSession() as session:
         async with getattr(session, method.lower())(
                 url=url, headers=headers, timeout=TIME_OUT, data=data
         ) as response:
-            return await response.json()
+            return await getattr(response, output)()
 
 
 async def gather_tasks(coros: dict, result_getter: callable = None):
